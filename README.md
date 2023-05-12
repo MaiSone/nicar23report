@@ -1,11 +1,18 @@
 # 地点別データを地図データと組み合わせたsvgを作成する
 
 
-0. npm install でパッケージをインストール。パスを通す
+0. npm install でパッケージをインストール。パスを通す。testディレクトリを作成
+```
+npm install
+export PATH=$PATH:./node_modules/.bin
+mkdir test
+```
 
-1. N03-22_11_220101.geojsonをコピーしてsaitama.geojsonにする
-2. saitama.geojsonを編集して、saitama.geo.jsonにする
-- before
+1. N03-22_11_220101.geojsonをコピーしてtest配下に入れる。saitama.geo.jsonに名前を変更
+
+2. saitama.geojsonを編集する
+- 開始部分
+  - before
 ```
  {
     "type": "FeatureCollection",
@@ -13,12 +20,26 @@
     "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::6668" } },
     "features": [
  ```
-- after
+   - after
  ```
  {
     "type": "FeatureCollection","features": [
- ```
-3. 平面の地図にする
+```
+- 終わりの部分
+  - before
+```
+835145577006983, 35.965320918925443 ] ] ] } 
+}
+]
+}
+```
+  - after
+```
+835145577006983, 35.965320918925443 ] ] ] } }]}
+```
+4. c202304-1_edit.csvをコピーしてtest配下に入れる。saitama_data.csvに名前を変更
+
+3. saitama.geo.jsonを平面の地図にする
 ```
 cat test/saitama.geo.json \
   | geoproject 'd3.geoConicEqualArea().parallels([35.4,36.3]).rotate([86, 0]).fitSize([960, 960], d)' \
@@ -32,9 +53,9 @@ ndjson-cat test/saitama_projected.geo.json \
   > test/saitama_projected.ndjson
 ```
 
-5. csvデータのヘッダーを予め使用するカラムは英語名に変えて置き、ndjsonに変換する
+5. test/saitama_data.csvのヘッダーは予め使用するカラムを英語に変えておく。そのうえでndjsonに変換する
 ```
-csv2json -n work/saitama_data.csv \
+csv2json -n test/saitama_data.csv \
   | ndjson-map '{ id: d.code, population: +d.population, density: +d.density }' \
   > test/saitama_data.ndjson
 ```
@@ -49,7 +70,7 @@ ndjson-join 'd.id' 'd.properties.N03_007' \
 
 6. 結合したndjsonに人口密度と人口を追加する
 ```
-  cat test/saitama_projected_marged.ndjson \
+cat test/saitama_projected_marged.ndjson \
   | ndjson-map '
       d[1].properties.density = d[0].density,
       d[1].properties.population = d[0].population,
@@ -117,9 +138,17 @@ cat test/saitama_projected_marged_2_simplified_quantized_colors.ndjson \
   > test/saitama.svg
 ```
 
+
+
 13. svgの向きを変える
+
+- before
 ```
-transform="rotate(-90)"
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="960" height="960" viewBox="0 0 960 960" fill="none">
+```
+- after
+```
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="960" height="960" viewBox="0 0 960 960" fill="none" transform="rotate(-90)">
 ```
 
 14. ブラウザで表示。完成
