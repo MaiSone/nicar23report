@@ -1,34 +1,45 @@
-# 地点別データを地図データと組み合わせて表示する
+# 地点別データを地図データと組み合わせたsvgを作成する
 
 
 0. npm install でパッケージをインストール。パスを通す
 
 1. N03-22_11_220101.geojsonをコピーしてsaitama.geojsonにする
-
-2. 平面の地図にする
+2. saitama.geojsonを編集して、saitama.geo.jsonにする
+- before
+```
+ {
+    "type": "FeatureCollection",
+    "name": "N03-22_11_220101",
+    "crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::6668" } },
+    "features": [
+ ```
+- after
+ ```
+ {
+    "type": "FeatureCollection","features": [
+ ```
+3. 平面の地図にする
 ```
 cat test/saitama.geo.json \
   | geoproject 'd3.geoConicEqualArea().parallels([35.4,36.3]).rotate([86, 0]).fitSize([960, 960], d)' \
   > test/saitama_projected.geo.json
 ```
 
-3. geojsonをndjson形式に分割
+4. geojsonをndjson形式に分割
 ```
 ndjson-cat test/saitama_projected.geo.json \
   | ndjson-split 'd.features' \
   > test/saitama_projected.ndjson
 ```
 
-4. csvデータをndjsonに変換する
+5. csvデータのヘッダーを予め使用するカラムは英語名に変えて置き、ndjsonに変換する
 ```
 csv2json -n work/saitama_data.csv \
   | ndjson-map '{ id: d.code, population: +d.population, density: +d.density }' \
   > test/saitama_data.ndjson
 ```
 
-
-
-5.  地図とcsvデータを結合する
+6.  地図とcsvデータを結合する
 ```
 ndjson-join 'd.id' 'd.properties.N03_007' \
   test/saitama_data.ndjson \
@@ -36,7 +47,7 @@ ndjson-join 'd.id' 'd.properties.N03_007' \
   > test/saitama_projected_marged.ndjson
 ```
 
-6. 結合したndjsonから人口密度を計算
+6. 結合したndjsonに人口密度と人口を追加する
 ```
   cat test/saitama_projected_marged.ndjson \
   | ndjson-map '
@@ -46,7 +57,7 @@ ndjson-join 'd.id' 'd.properties.N03_007' \
     ' \
   > test/saitama_projected_marged_2.ndjson
 ```
-7. 新しいndjsonからgeojsonを作成
+7. ndjsonからgeojsonを作成
 ```
 cat test/saitama_projected_marged_2.ndjson \
   | ndjson-reduce \
